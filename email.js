@@ -15,7 +15,6 @@ require('child_process').execSync(`npm i ${dependencies}`);
 const log = require('debug')(`${name}:log`);
 const error = require('debug')(`${name}:error`);
 
-const checkEmail = require('email-validator').validate;
 const _ = require('underscore');
 const encode = require('js-htmlencode').htmlEncode;
 
@@ -37,8 +36,8 @@ const renderInput = (values) => {
           type=email
           name=fromEmail
           class="from-email"
-          placeholder="e.g. harbormaster@localhost"
-          disabled
+          placeholder="harbormaster@localhost"
+          required
           value="harbormaster@localhost"
         >
       </span>
