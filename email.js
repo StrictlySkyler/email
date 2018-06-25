@@ -1,4 +1,7 @@
-/* eslint no-param-reassign: 0, function-paren-newline: 0, import/no-unresolved: 0 */
+/* eslint no-param-reassign: 0,
+  function-paren-newline: 0,
+  import/no-unresolved: 0,
+  no-underscore-dangle: 0 */
 /* globals $H */
 
 const name = 'email';
@@ -172,12 +175,15 @@ const update = (lane, values) => {
 };
 
 const fillReferenceText = (manifest, text) => {
-  let referenceRegex = /\[\[([a-zA-Z0-9\.-_\+:]+)\]\]/g;
+  const referenceRegex = /\[\[([a-zA-Z0-9_.:-]+)\]\]/g;
+  const strictReferenceRegex = /\[\[\[([a-zA-Z0-9_.:-]+)\]\]\]/g;
 
-  let referencedValueText = text.replace(referenceRegex, (match, target) => {
-    let value = _.get(manifest, target);
-    if (value) return JSON.stringify(value, null, '\t');
-    return;
+  const referencedValueText = text.replace(strictReferenceRegex, (match, target) => {
+    const value = JSON.stringify(_.get(manifest, target), null, '\t');
+    return value;
+  }).replace(referenceRegex, (match, target) => {
+    const value = _.get(manifest, target);
+    return value;
   });
   return referencedValueText;
 };
@@ -185,13 +191,13 @@ const fillReferenceText = (manifest, text) => {
 const work = (lane, manifest) => {
   let exitCode = 1;
   if (manifest.includePriorManifest && manifest.prior_manifest) {
-    let prior_manifest_json = JSON.stringify(
-      manifest.prior_manifest, null, '\t'
+    const priorManifestJson = JSON.stringify(
+      manifest.prior_manifest, null, '\t',
     );
-    manifest.rawText += `\nPrior manifest:\n${prior_manifest_json}`;
+    manifest.rawText += `\nPrior manifest:\n${priorManifestJson}`;
   }
-  let referencedSubject = fillReferenceText(manifest, manifest.subject);
-  let referencedText = fillReferenceText(manifest, manifest.rawText);
+  const referencedSubject = fillReferenceText(manifest, manifest.subject);
+  const referencedText = fillReferenceText(manifest, manifest.rawText);
 
   try {
     $H.Email.send({
@@ -200,13 +206,13 @@ const work = (lane, manifest) => {
       cc: manifest.toCCList.split('\n'),
       bcc: manifest.toBCCList.split('\n'),
       replyTo: manifest.replyTo.split('\n'),
-      subject: referencedSubject ? referencedSubject : manifest.subject,
-      text: referencedText ? referencedText : manifest.rawText,
+      subject: referencedSubject || manifest.subject,
+      text: referencedText || manifest.rawText,
     });
     exitCode = 0;
   } catch (err) {
     error(JSON.stringify(err, null, '\t'));
-    let shipment = Shipments.findOne(manifest.shipment_id);
+    const shipment = Shipments.findOne(manifest.shipment_id);
     shipment.stderr.push(err);
     Shipments.update(shipment._id, { $set: { stderr: shipment.stderr } });
     manifest.error = err;
