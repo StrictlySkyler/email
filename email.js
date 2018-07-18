@@ -43,7 +43,7 @@ const renderInput = (values) => {
           class="from-email"
           placeholder="harbormaster@localhost"
           required
-          value="harbormaster@localhost"
+          value="${values.fromEmail || ''}"
         >
       </span>
     </label>
