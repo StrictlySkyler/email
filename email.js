@@ -1,24 +1,24 @@
-/* eslint no-param-reassign: 0, function-paren-newline: 0, import/no-unresolved: 0 */
+/* eslint
+  no-param-reassign: 0,
+  function-paren-newline: 0,
+  global-require: 0,
+  no-underscore-dangle: 0,
+  import/no-unresolved: 0 */
 /* globals $H */
 
 const name = 'email';
 
-const dependencies = [
+const pkgs = [
   'email-validator',
   'js-htmlencode',
   'debug',
   'lodash',
-].join(' ');
+  'email-me-when',
+];
 
-require('child_process').execSync(`npm i ${dependencies}`);
-
-const log = require('debug')(`${name}:log`);
-const error = require('debug')(`${name}:error`);
-
-const _ = require('lodash');
-const encode = require('js-htmlencode').htmlEncode;
-
-log(`Dependencies installed: ${dependencies}`);
+let error;
+let _;
+let encode;
 
 let Shipments;
 
@@ -123,7 +123,13 @@ const renderWorkPreview = (manifest) => {
 
 const register = (lanes, users, harbors, shipments) => {
   Shipments = shipments;
-  return name;
+  return { name, pkgs };
+};
+
+const next = () => {
+  error = require('debug')(`${name}:error`);
+  _ = require('lodash');
+  encode = require('js-htmlencode').htmlEncode;
 };
 
 const checkDupes = (values) => {
@@ -172,12 +178,12 @@ const update = (lane, values) => {
 };
 
 const fillReferenceText = (manifest, text) => {
-  let referenceRegex = /\[\[([a-zA-Z0-9\.-_\+:]+)\]\]/g;
+  const referenceRegex = /\[\[([a-zA-Z0-9.-_+:]+)\]\]/g;
 
-  let referencedValueText = text.replace(referenceRegex, (match, target) => {
-    let value = _.get(manifest, target);
+  const referencedValueText = text.replace(referenceRegex, (match, target) => {
+    const value = _.get(manifest, target);
     if (value) return JSON.stringify(value, null, '\t');
-    return;
+    return '';
   });
   return referencedValueText;
 };
@@ -185,13 +191,13 @@ const fillReferenceText = (manifest, text) => {
 const work = (lane, manifest) => {
   let exitCode = 1;
   if (manifest.includePriorManifest && manifest.prior_manifest) {
-    let prior_manifest_json = JSON.stringify(
-      manifest.prior_manifest, null, '\t'
+    const priorManifestJson = JSON.stringify(
+      manifest.prior_manifest, null, '\t',
     );
-    manifest.rawText += `\nPrior manifest:\n${prior_manifest_json}`;
+    manifest.rawText += `\nPrior manifest:\n${priorManifestJson}`;
   }
-  let referencedSubject = fillReferenceText(manifest, manifest.subject);
-  let referencedText = fillReferenceText(manifest, manifest.rawText);
+  const referencedSubject = fillReferenceText(manifest, manifest.subject);
+  const referencedText = fillReferenceText(manifest, manifest.rawText);
 
   try {
     $H.Email.send({
@@ -200,13 +206,13 @@ const work = (lane, manifest) => {
       cc: manifest.toCCList.split('\n'),
       bcc: manifest.toBCCList.split('\n'),
       replyTo: manifest.replyTo.split('\n'),
-      subject: referencedSubject ? referencedSubject : manifest.subject,
-      text: referencedText ? referencedText : manifest.rawText,
+      subject: referencedSubject || manifest.subject,
+      text: referencedText || manifest.rawText,
     });
     exitCode = 0;
   } catch (err) {
     error(JSON.stringify(err, null, '\t'));
-    let shipment = Shipments.findOne(manifest.shipment_id);
+    const shipment = Shipments.findOne(manifest.shipment_id);
     shipment.stderr.push(err);
     Shipments.update(shipment._id, { $set: { stderr: shipment.stderr } });
     manifest.error = err;
@@ -221,4 +227,5 @@ module.exports = {
   register,
   update,
   work,
+  next,
 };
