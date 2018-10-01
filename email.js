@@ -207,7 +207,7 @@ const work = (lane, manifest) => {
       bcc: manifest.toBCCList.split('\n'),
       replyTo: manifest.replyTo.split('\n'),
       subject: referencedSubject || manifest.subject,
-      text: referencedText || manifest.rawText,
+      html: referencedText || manifest.rawText,
     });
     exitCode = 0;
   } catch (err) {
