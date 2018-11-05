@@ -2,7 +2,7 @@
 
 A harbor for sending an email automatically.
 
-[[screenshot.png]]
+![](https://github.com/StrictlySkyler/harbormaster-email/raw/develop/email.png)
 
 Shipping to this harbor will send an email with the preconfigured settings, as depicted in the screenshot.
 
