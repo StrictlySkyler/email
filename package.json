@@ -1,0 +1,19 @@
+{
+  "name": "harbormaster-email",
+  "version": "1.0.1",
+  "description": "Send an email!",
+  "main": "email.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strictlyskyler/harbormaster-email.git"
+  },
+  "author": "Skyler Brungardt <skyler.brungardt@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/strictlyskyler/harbormaster-email/issues"
+  },
+  "homepage": "https://github.com/strictlyskyler/harbormaster-email#readme"
+}
