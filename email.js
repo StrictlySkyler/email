@@ -1,24 +1,27 @@
-/* eslint
-  no-param-reassign: 0,
+/* eslint no-param-reassign: 0,
   function-paren-newline: 0,
-  global-require: 0,
-  no-underscore-dangle: 0,
-  import/no-unresolved: 0 */
+  import/no-unresolved: 0,
+  no-underscore-dangle: 0 */
 /* globals $H */
 
 const name = 'email';
 
-const pkgs = [
+const dependencies = [
   'email-validator',
   'js-htmlencode',
   'debug',
   'lodash',
-  'email-me-when',
-];
+].join(' ');
 
-let error;
-let _;
-let encode;
+require('child_process').execSync(`npm i ${dependencies}`);
+
+const log = require('debug')(`${name}:log`);
+const error = require('debug')(`${name}:error`);
+
+const _ = require('lodash');
+const encode = require('js-htmlencode').htmlEncode;
+
+log(`Dependencies installed: ${dependencies}`);
 
 let Shipments;
 
@@ -40,7 +43,7 @@ const renderInput = (values) => {
           class="from-email"
           placeholder="harbormaster@localhost"
           required
-          value="harbormaster@localhost"
+          value="${values.fromEmail || ''}"
         >
       </span>
     </label>
@@ -123,13 +126,7 @@ const renderWorkPreview = (manifest) => {
 
 const register = (lanes, users, harbors, shipments) => {
   Shipments = shipments;
-  return { name, pkgs };
-};
-
-const next = () => {
-  error = require('debug')(`${name}:error`);
-  _ = require('lodash');
-  encode = require('js-htmlencode').htmlEncode;
+  return name;
 };
 
 const checkDupes = (values) => {
@@ -178,12 +175,15 @@ const update = (lane, values) => {
 };
 
 const fillReferenceText = (manifest, text) => {
-  const referenceRegex = /\[\[([a-zA-Z0-9.-_+:]+)\]\]/g;
+  const referenceRegex = /\[\[([a-zA-Z0-9_.:-]+)\]\]/g;
+  const strictReferenceRegex = /\[\[\[([a-zA-Z0-9_.:-]+)\]\]\]/g;
 
-  const referencedValueText = text.replace(referenceRegex, (match, target) => {
+  const referencedValueText = text.replace(strictReferenceRegex, (match, target) => {
+    const value = JSON.stringify(_.get(manifest, target), null, '\t');
+    return value;
+  }).replace(referenceRegex, (match, target) => {
     const value = _.get(manifest, target);
-    if (value) return JSON.stringify(value, null, '\t');
-    return '';
+    return value;
   });
   return referencedValueText;
 };
@@ -207,7 +207,7 @@ const work = (lane, manifest) => {
       bcc: manifest.toBCCList.split('\n'),
       replyTo: manifest.replyTo.split('\n'),
       subject: referencedSubject || manifest.subject,
-      html: referencedText || manifest.rawText,
+      email: referencedText || manifest.rawText,
     });
     exitCode = 0;
   } catch (err) {
@@ -227,5 +227,4 @@ module.exports = {
   register,
   update,
   work,
-  next,
 };
