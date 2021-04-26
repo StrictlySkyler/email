@@ -30,12 +30,12 @@ const renderInput = (values) => {
 
   return /*html*/`
     <style>
-      .email-list {
+      .harbor textarea.email-list {
         resize: vertical;
         min-height: initial;
       }
 
-      .email-raw-text {
+      .harbor textarea.email-raw-text {
         min-height: 150px;
       }
     </style>
