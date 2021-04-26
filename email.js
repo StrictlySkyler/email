@@ -28,13 +28,13 @@ let Shipments;
 const renderInput = (values) => {
   values = values || {};
 
-  return `
+  return /*html*/`
     <style>
       .email-list {
         resize: vertical;
       }
     </style>
-    <p>Note: Duplicates email addresses aren't allowed among recipients.</p>
+    <p>Note: Duplicates email addresses aren't allowed within individual recipient types (To, CC, BCC).</p>
     <label>From:
       <span class="address-field">
         <input
@@ -108,7 +108,7 @@ const renderWorkPreview = (manifest) => {
   let includePriorManifest = false;
   if (manifest.includePriorManifest) includePriorManifest = true;
 
-  return `
+  return /*html*/`
     <figure>
       <figcaption>An email will be sent with the following details:</figcaption>
       <p>From: <code>${manifest.fromEmail}</code></p>
@@ -129,6 +129,21 @@ const register = (lanes, users, harbors, shipments) => {
   return name;
 };
 
+const hasDupes = list => {
+  if (
+    _.uniq( //4. remove duplicate dupe entries
+      _.filter( //3. filter by keys with more than one occurance
+        _.groupBy( //2. group by email as keys
+          _.flattenDeep(list), //1. flatten nested list
+          (n) => n
+        ), 
+        (n) => n.length > 1,
+      )
+    ).length
+  ) return true;
+  return false;
+}
+
 const checkDupes = (values) => {
   const toList = values.toEmailList.split('\n');
   const ccList = values.toCCList.length ?
@@ -138,20 +153,7 @@ const checkDupes = (values) => {
     values.toBCCList.split('\n') :
     [];
 
-  if (
-    _.uniq(_.flatten(_.filter(
-      _.groupBy(toList, (n) => n),
-      (n) => n.length > 1,
-    ))).length ||
-    _.uniq(_.flatten(_.filter(
-      _.groupBy(ccList, (n) => n),
-      (n) => n.length > 1,
-    ))).length ||
-    _.uniq(_.flatten(_.filter(
-      _.groupBy(bccList, (n) => n),
-      (n) => n.length > 1,
-    ))).length
-  ) {
+  if (hasDupes(toList) || hasDupes(ccList) || hasDupes(bccList)) {
     return false;
   }
 
