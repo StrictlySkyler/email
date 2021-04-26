@@ -32,6 +32,11 @@ const renderInput = (values) => {
     <style>
       .email-list {
         resize: vertical;
+        min-height: initial;
+      }
+
+      .email-raw-text {
+        min-height: 150px;
       }
     </style>
     <p>Note: Duplicates email addresses aren't allowed within individual recipient types (To, CC, BCC).</p>
