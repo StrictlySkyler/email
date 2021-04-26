@@ -207,7 +207,7 @@ const work = (lane, manifest) => {
   const referencedText = fillReferenceText(manifest, manifest.rawText);
 
   try {
-    $H.Email.send({
+    H.Email.send({
       from: manifest.fromEmail,
       to: manifest.toEmailList.split('\n'),
       cc: manifest.toCCList.split('\n'),
@@ -220,7 +220,8 @@ const work = (lane, manifest) => {
   } catch (err) {
     error(JSON.stringify(err, null, '\t'));
     const shipment = Shipments.findOne(manifest.shipment_id);
-    shipment.stderr.push(err);
+    const key = new Date();
+    shipment.stderr[key] = err;
     Shipments.update(shipment._id, { $set: { stderr: shipment.stderr } });
     manifest.error = err;
   }
