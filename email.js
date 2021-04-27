@@ -35,7 +35,7 @@ const renderInput = (values) => {
         min-height: initial;
       }
 
-      .harbor textarea.email-raw-text {
+      .harbor textarea.email-body {
         min-height: 150px;
       }
     </style>
@@ -90,10 +90,10 @@ const renderInput = (values) => {
         value="${values.subject ? encode(values.subject) : ''}"
       >
     </label>
-    <label>Body (raw text):
+    <label>Body (supports HTML):
       <textarea
         name=rawText
-        class="email-raw-text email-list"
+        class="email-body email-list"
         placeholder="(empty)"
         required
       >${values.rawText ? encode(values.rawText) : ''}</textarea>
@@ -184,6 +184,8 @@ const update = (lane, values) => {
 const fillReferenceText = (manifest, text) => {
   const referenceRegex = /\[\[([a-zA-Z0-9_.:-]+)\]\]/g;
   const strictReferenceRegex = /\[\[\[([a-zA-Z0-9_.:-]+)\]\]\]/g;
+  const priorExitCodeRegex = /\[\[prior_exit_code\]\]/g;
+  const priorFinishedRegex = /\[\[prior_finished\]\]/g;
 
   const referencedValueText = text.replace(
     strictReferenceRegex, 
@@ -191,10 +193,38 @@ const fillReferenceText = (manifest, text) => {
       const value = JSON.stringify(_.get(manifest, target), null, '\t');
       return value;
     }
-  ).replace(referenceRegex, (match, target) => {
-    const value = _.get(manifest, target);
-    return value;
-  });
+  )
+  .replace(
+    priorExitCodeRegex,
+    (match, target) => {
+      if (!manifest.prior_manifest) return false;
+      const prior_shipment = Shipments.findOne(
+        manifest.prior_manifest.shipment_id
+      );
+      
+      return prior_shipment.exit_code;
+    }
+  )
+  .replace(
+    priorFinishedRegex,
+    (match, target) => {
+      if (!manifest.prior_manifest) return false;
+      const prior_shipment = Shipments.findOne(
+        manifest.prior_manifest.shipment_id
+      );
+      
+      return prior_shipment.finished;
+    }
+  )
+  .replace(
+    referenceRegex, 
+    (match, target) => {
+      const value = _.get(manifest, target);
+      return value;
+    }
+  )
+  ;
+  
   return referencedValueText;
 };
 
