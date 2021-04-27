@@ -185,10 +185,13 @@ const fillReferenceText = (manifest, text) => {
   const referenceRegex = /\[\[([a-zA-Z0-9_.:-]+)\]\]/g;
   const strictReferenceRegex = /\[\[\[([a-zA-Z0-9_.:-]+)\]\]\]/g;
 
-  const referencedValueText = text.replace(strictReferenceRegex, (match, target) => {
-    const value = JSON.stringify(_.get(manifest, target), null, '\t');
-    return value;
-  }).replace(referenceRegex, (match, target) => {
+  const referencedValueText = text.replace(
+    strictReferenceRegex, 
+    (match, target) => {
+      const value = JSON.stringify(_.get(manifest, target), null, '\t');
+      return value;
+    }
+  ).replace(referenceRegex, (match, target) => {
     const value = _.get(manifest, target);
     return value;
   });
