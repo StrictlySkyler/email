@@ -6,23 +6,17 @@
 
 const name = 'email';
 
-const dependencies = [
+const pkgs = [
   'email-validator',
   'js-htmlencode',
   'debug',
   'lodash',
-].join(' ');
+];
 
-require('child_process').execSync(`npm i ${dependencies}`);
-
-const log = require('debug')(`${name}:log`);
-const error = require('debug')(`${name}:error`);
-
-const _ = require('lodash');
-const encode = require('js-htmlencode').htmlEncode;
-
-log(`Dependencies installed: ${dependencies}`);
-
+let log;
+let error;
+let _;
+let encode;
 let Shipments;
 
 const renderInput = (values) => {
@@ -40,6 +34,7 @@ const renderInput = (values) => {
       }
     </style>
     <p>Note: Duplicates email addresses aren't allowed within individual recipient types (To, CC, BCC).</p>
+    <p>To insert a value from a prior harbor's shipment manifest into the email use double brackets, e.g. <code>[[timestamp]]</code>, or for an unparsed value, use triple brackets, e.g. <code>[[[prior_manifest]]]</code></p>
     <label>From:
       <span class="address-field">
         <input
@@ -131,7 +126,7 @@ const renderWorkPreview = (manifest) => {
 
 const register = (lanes, users, harbors, shipments) => {
   Shipments = shipments;
-  return name;
+  return { name, pkgs };
 };
 
 const hasDupes = list => {
@@ -141,7 +136,7 @@ const hasDupes = list => {
         _.groupBy( //2. group by email as keys
           _.flattenDeep(list), //1. flatten nested list
           (n) => n
-        ), 
+        ),
         (n) => n.length > 1,
       )
     ).length
@@ -188,7 +183,7 @@ const fillReferenceText = (manifest, text) => {
   const priorFinishedRegex = /\[\[prior_finished\]\]/g;
 
   const referencedValueText = text.replace(
-    strictReferenceRegex, 
+    strictReferenceRegex,
     (match, target) => {
       const value = JSON.stringify(_.get(manifest, target), null, '\t');
       return value;
@@ -201,7 +196,7 @@ const fillReferenceText = (manifest, text) => {
       const prior_shipment = Shipments.findOne(
         manifest.prior_manifest.shipment_id
       );
-      
+
       return prior_shipment.exit_code;
     }
   )
@@ -212,19 +207,19 @@ const fillReferenceText = (manifest, text) => {
       const prior_shipment = Shipments.findOne(
         manifest.prior_manifest.shipment_id
       );
-      
+
       return prior_shipment.finished;
     }
   )
   .replace(
-    referenceRegex, 
+    referenceRegex,
     (match, target) => {
       const value = _.get(manifest, target);
       return value;
     }
   )
   ;
-  
+
   return referencedValueText;
 };
 
@@ -268,4 +263,11 @@ module.exports = {
   register,
   update,
   work,
+  next: () => {
+    _ = require('lodash');
+    encode = require('js-htmlencode').htmlEncode;
+    log = require('debug')(`${name}:log`);
+    error = require('debug')(`${name}:error`);
+    log('Email harbor is ready.');
+  },
 };
