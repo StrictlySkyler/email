@@ -1,8 +1,6 @@
 /* eslint no-param-reassign: 0,
   function-paren-newline: 0,
-  import/no-unresolved: 0,
   no-underscore-dangle: 0 */
-/* globals $H */
 
 const name = 'email';
 
@@ -33,8 +31,15 @@ const renderInput = (values) => {
         min-height: 150px;
       }
     </style>
-    <p>Note: Duplicates email addresses aren't allowed within individual recipient types (To, CC, BCC).</p>
-    <p>To insert a value from a prior harbor's shipment manifest into the email use double brackets, e.g. <code>[[timestamp]]</code>, or for an unparsed value, use triple brackets, e.g. <code>[[[prior_manifest]]]</code></p>
+    <p>
+      Note: Duplicates email addresses aren't allowed within individual
+      recipient types (To, CC, BCC).
+    </p>
+    <p>
+      To insert a value from a prior harbor's shipment manifest into the email
+      use double brackets, e.g. <code>[[timestamp]]</code>, or for an unparsed
+      value, use triple brackets, e.g. <code>[[[prior_manifest]]]</code>
+    </p>
     <label>From:
       <span class="address-field">
         <input
@@ -142,7 +147,7 @@ const hasDupes = list => {
     ).length
   ) return true;
   return false;
-}
+};
 
 const checkDupes = (values) => {
   const toList = values.toEmailList.split('\n');
@@ -176,7 +181,7 @@ const update = (lane, values) => {
   return false;
 };
 
-const fillReferenceText = (manifest, text) => {
+const fillReferenceText = async (manifest, text) => {
   const referenceRegex = /\[\[([a-zA-Z0-9_.:-]+)\]\]/g;
   const strictReferenceRegex = /\[\[\[([a-zA-Z0-9_.:-]+)\]\]\]/g;
   const priorExitCodeRegex = /\[\[prior_exit_code\]\]/g;
@@ -189,41 +194,41 @@ const fillReferenceText = (manifest, text) => {
       return value;
     }
   )
-  .replace(
-    priorExitCodeRegex,
-    (match, target) => {
-      if (!manifest.prior_manifest) return false;
-      const prior_shipment = Shipments.findOne(
-        manifest.prior_manifest.shipment_id
-      );
+    .replace(
+      priorExitCodeRegex,
+      async () => {
+        if (!manifest.prior_manifest) return false;
+        const prior_shipment = await Shipments.findOneAsync(
+          manifest.prior_manifest.shipment_id
+        );
 
-      return prior_shipment.exit_code;
-    }
-  )
-  .replace(
-    priorFinishedRegex,
-    (match, target) => {
-      if (!manifest.prior_manifest) return false;
-      const prior_shipment = Shipments.findOne(
-        manifest.prior_manifest.shipment_id
-      );
+        return prior_shipment.exit_code;
+      }
+    )
+    .replace(
+      priorFinishedRegex,
+      async () => {
+        if (!manifest.prior_manifest) return false;
+        const prior_shipment = await Shipments.findOneAsync(
+          manifest.prior_manifest.shipment_id
+        );
 
-      return prior_shipment.finished;
-    }
-  )
-  .replace(
-    referenceRegex,
-    (match, target) => {
-      const value = _.get(manifest, target);
-      return value;
-    }
-  )
+        return prior_shipment.finished;
+      }
+    )
+    .replace(
+      referenceRegex,
+      (match, target) => {
+        const value = _.get(manifest, target);
+        return value;
+      }
+    )
   ;
 
   return referencedValueText;
 };
 
-const work = (lane, manifest) => {
+const work = async (lane, manifest) => {
   let exitCode = 1;
   if (manifest.includePriorManifest && manifest.prior_manifest) {
     const priorManifestJson = JSON.stringify(
@@ -231,8 +236,8 @@ const work = (lane, manifest) => {
     );
     manifest.rawText += `\nPrior manifest:\n${priorManifestJson}`;
   }
-  const referencedSubject = fillReferenceText(manifest, manifest.subject);
-  const referencedText = fillReferenceText(manifest, manifest.rawText);
+  const referencedSubject = await fillReferenceText(manifest, manifest.subject);
+  const referencedText = await fillReferenceText(manifest, manifest.rawText);
 
   try {
     H.Email.send({
@@ -245,16 +250,20 @@ const work = (lane, manifest) => {
       html: referencedText || manifest.rawText,
     });
     exitCode = 0;
-  } catch (err) {
+  }
+  catch (err) {
     error(JSON.stringify(err, null, '\t'));
-    const shipment = Shipments.findOne(manifest.shipment_id);
+    const shipment = await Shipments.findOneAsync(manifest.shipment_id);
     const key = new Date();
     shipment.stderr[key] = err;
-    Shipments.update(shipment._id, { $set: { stderr: shipment.stderr } });
+    await Shipments.updateAsync(
+      shipment._id,
+      { $set: { stderr: shipment.stderr } }
+    );
     manifest.error = err;
   }
 
-  $H.call('Lanes#end_shipment', lane, exitCode, manifest);
+  H.end_shipment(lane, exitCode, manifest);
 };
 
 module.exports = {

@@ -2,10 +2,16 @@
 
 A harbor for sending an email automatically.
 
-![](https://github.com/StrictlySkyler/harbormaster-email/raw/develop/email.png)
+## Screenshots
 
-Shipping to this harbor will send an email with the preconfigured settings, as depicted in the screenshot.
+![Edit lane](edit-page.png)
 
-Dynamic values can also be inserted in the Subject and Body fields, parsed from the manifest passed to the harbor at runtime.  To insert a value from the harbor's shipment, use double-brackets, e.g.: `[[timestamp]]`.  To insert an un-parsed JSON value as a string, use triple-brackets, e.g.: `[[[prior_manifest]]]`
+![Ship lane](ship-page.png)
 
-Any value on the Shipment object can be referenced in this way, and will be converted to a string.
+## ESLint
+
+```bash
+npm run lint
+npm run lint:fix
+npm test
+```

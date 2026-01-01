@@ -4,7 +4,10 @@
   "description": "Send an email!",
   "main": "email.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint --max-warnings 0 \"**/*.js\"",
+    "lint:fix": "eslint --fix --max-warnings 0 \"**/*.js\"",
+    "pretest": "npm run lint",
+    "test": "echo \"ok\""
   },
   "repository": {
     "type": "git",
@@ -15,5 +18,10 @@
   "bugs": {
     "url": "https://github.com/strictlyskyler/harbormaster-email/issues"
   },
-  "homepage": "https://github.com/strictlyskyler/harbormaster-email#readme"
+  "homepage": "https://github.com/strictlyskyler/harbormaster-email#readme",
+  "devDependencies": {
+    "@babel/core": "^7.23.6",
+    "@babel/eslint-parser": "^7.23.3",
+    "eslint": "^8.55.0"
+  }
 }
